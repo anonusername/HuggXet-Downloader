@@ -51,7 +51,10 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-This will install PySide6 (Qt 6 for Python) and all necessary Qt modules.
+This will install:
+- **PySide6** (>=6.6.0) - Qt 6 for Python and all necessary Qt modules
+- **pytest** (>=7.4.0) - Testing framework
+- **pytest-qt** (>=4.2.0) - Pytest plugin for Qt applications
 
 ## Running the Application
 
@@ -66,6 +69,104 @@ Or make it executable and run directly:
 ```bash
 chmod +x main.py
 ./main.py
+```
+
+## Testing
+
+### Running Unit Tests
+
+The project includes comprehensive unit tests using pytest. To run all tests:
+
+```bash
+pytest
+```
+
+For verbose output with detailed test results:
+
+```bash
+pytest -v
+```
+
+To run specific test files:
+
+```bash
+pytest tests/test_download_item.py
+pytest tests/test_download_list_model.py
+pytest tests/test_download_backend.py
+```
+
+To see test coverage:
+
+```bash
+pytest --cov=main --cov-report=html
+```
+
+### Test Structure
+
+The test suite includes:
+
+- **test_download_item.py** - Tests for DownloadItem class
+  - Property initialization and default values
+  - Property setters and Qt signal emissions
+  - Signal behavior when values don't change
+
+- **test_download_list_model.py** - Tests for DownloadListModel
+  - Model initialization and data management
+  - Adding/removing items
+  - Data retrieval and role names
+  - Qt model signals and notifications
+
+- **test_download_backend.py** - Tests for DownloadBackend
+  - Download lifecycle (add, start, pause, remove)
+  - Batch operations (start all, pause all, clear completed)
+  - Status message updates
+  - Signal emissions
+
+### Writing New Tests
+
+When adding new features, create corresponding tests:
+
+1. Create test file in `tests/` directory following `test_*.py` naming
+2. Import required classes from `main.py`
+3. Use pytest fixtures for Qt application setup
+4. Test both functionality and Qt signal emissions
+5. Use descriptive test names that explain what is being tested
+
+Example test structure:
+
+```python
+import pytest
+from PySide6.QtCore import QCoreApplication
+from main import YourClass
+
+@pytest.fixture
+def app():
+    return QCoreApplication.instance() or QCoreApplication([])
+
+def test_your_feature(app):
+    # Arrange
+    obj = YourClass()
+    
+    # Act
+    result = obj.method()
+    
+    # Assert
+    assert result == expected_value
+```
+
+### Continuous Integration
+
+Tests should be run before committing changes:
+
+```bash
+# Run all tests
+pytest
+
+# Run with coverage
+pytest --cov=main
+
+# Run only fast tests (exclude slow markers)
+pytest -m "not slow"
 ```
 
 ## Usage
@@ -115,7 +216,13 @@ HuggXet-Downloader/
 │   ├── main.qml                    # Main application window
 │   ├── DownloadListDelegate.qml    # List view item template
 │   └── DownloadGridDelegate.qml    # Grid view item template
+├── tests/                          # Unit tests
+│   ├── __init__.py                 # Test package marker
+│   ├── test_download_item.py       # DownloadItem tests
+│   ├── test_download_list_model.py # DownloadListModel tests
+│   └── test_download_backend.py    # DownloadBackend tests
 ├── main.py                         # Python backend and entry point
+├── pytest.ini                      # Pytest configuration
 ├── requirements.txt                # Python dependencies
 ├── SETUP.md                        # This file
 ├── README.md                       # Project description
@@ -202,9 +309,17 @@ Edit the `_init_sample_data()` method in `main.py` to add or modify sample downl
 
 ## Dependencies
 
+### Runtime Dependencies
 - **PySide6** (>=6.6.0) - Qt 6 for Python
   - Includes QtCore, QtGui, QtQml, QtQuick modules
   - Provides QML engine and Material Design components
+
+### Development Dependencies
+- **pytest** (>=7.4.0) - Testing framework for Python
+  - Provides fixtures, assertions, and test discovery
+- **pytest-qt** (>=4.2.0) - Pytest plugin for Qt/PySide6
+  - Enables testing of Qt signals, slots, and QML components
+  - Provides Qt application fixtures for tests
 
 ## License
 
