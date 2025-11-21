@@ -163,11 +163,27 @@ Tests should be run before committing changes:
 pytest
 
 # Run with coverage
-pytest --cov=main
+pytest --cov=. --cov-report=html
 
 # Run only fast tests (exclude slow markers)
 pytest -m "not slow"
 ```
+
+### Using VS Code Tasks
+
+VS Code tasks are configured in `.vscode/tasks.json` for common operations:
+
+**Access tasks:** `Ctrl+Shift+P` → "Tasks: Run Task"
+
+**Quick shortcuts:**
+- `Ctrl+Shift+B` - Default build task (Build: Current Platform)
+- `Ctrl+Shift+T` - Default test task (Test: Unit Tests)
+
+**Available tasks:**
+- **Setup tasks** - Create venv, install dependencies, install PyInstaller
+- **Run task** - Launch the application
+- **Test tasks** - Unit tests, integration tests, coverage
+- **Build tasks** - Platform-specific executable builds
 
 ## Usage
 
@@ -293,6 +309,87 @@ If running headless or via SSH, you may need X11 forwarding or Xvfb:
 ```bash
 xvfb-run python main.py
 ```
+
+## Building Executables
+
+### Prerequisites
+
+Before building executables, ensure:
+
+1. **Virtual environment exists:**
+   ```bash
+   python -m venv .venv
+   ```
+
+2. **Dependencies installed:**
+   ```bash
+   # Activate venv first
+   pip install -r requirements.txt
+   ```
+
+3. **PyInstaller installed:**
+   ```bash
+   pip install pyinstaller>=6.0.0
+   ```
+
+### Using VS Code Build Tasks
+
+**Keyboard shortcuts:**
+- `Ctrl+Shift+B` (Windows/Linux) or `Cmd+Shift+B` (macOS) - Build for current platform
+- Or: `Ctrl+Shift+P` → "Tasks: Run Build Task"
+
+**Platform-specific builds:**
+1. Open Command Palette: `Ctrl+Shift+P` (or `Cmd+Shift+P`)
+2. Type "Tasks: Run Task"
+3. Select:
+   - `Build: Windows Executable` (Windows only)
+   - `Build: Linux Executable` (Linux only)
+   - `Build: macOS Executable` (macOS only)
+   - `Build: Current Platform` (auto-detects OS)
+
+**Output locations:**
+- Windows: `.venv/releases/windows/HuggXet-Downloader.exe`
+- Linux: `.venv/releases/linux/HuggXet-Downloader`
+- macOS: `.venv/releases/macos/HuggXet-Downloader`
+
+### Manual Building
+
+**Windows:**
+```cmd
+.venv\Scripts\python.exe -m PyInstaller --distpath .venv/releases/windows --workpath .venv/build --clean HuggXet-Downloader.spec
+```
+
+**Linux:**
+```bash
+.venv/bin/python -m PyInstaller --distpath .venv/releases/linux --workpath .venv/build --clean HuggXet-Downloader.spec
+```
+
+**macOS:**
+```bash
+.venv/bin/python -m PyInstaller --distpath .venv/releases/macos --workpath .venv/build --clean HuggXet-Downloader.spec
+```
+
+### Build Artifacts
+
+All build outputs are placed inside `.venv/` to keep the repository clean:
+- `.venv/build/` - PyInstaller intermediate files
+- `.venv/releases/{platform}/` - Final executables
+
+These directories are ignored by git (see `.gitignore`).
+
+### Troubleshooting Builds
+
+**Error: "Virtual environment not found"**
+- Run `Setup: Create Virtual Environment` task first
+- Or manually: `python -m venv .venv`
+
+**Error: "PyInstaller not found"**
+- Run `Setup: Install PyInstaller` task
+- Or manually: `pip install pyinstaller>=6.0.0`
+
+**Error: "No module named 'PySide6'"**
+- Run `Setup: Install Dependencies` task
+- Or manually: `pip install -r requirements.txt`
 
 ## Development
 

@@ -5,10 +5,13 @@ A modern touch-enabled download manager built with PySide6 and QML
 """
 import sys
 import os
+import json
 from pathlib import Path
-from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl, QAbstractListModel, QModelIndex, Qt
+from PySide6.QtCore import QObject, Signal, Slot, Property, QUrl, QAbstractListModel, QModelIndex, Qt, QStandardPaths
 from PySide6.QtGui import QGuiApplication
 from PySide6.QtQml import QQmlApplicationEngine, QQmlContext
+from download_worker import DownloadWorker
+from downloaders import HuggingFaceDownloader
 
 
 class DownloadItem(QObject):
@@ -89,6 +92,30 @@ class DownloadItem(QObject):
         if self._priority != value:
             self._priority = value
             self.priorityChanged.emit()
+    
+    def to_dict(self):
+        """Convert download item to dictionary for JSON serialization"""
+        return {
+            "name": self._name,
+            "url": self._url,
+            "progress": self._progress,
+            "status": self._status,
+            "size": self._size,
+            "priority": self._priority
+        }
+    
+    @staticmethod
+    def from_dict(data, parent=None):
+        """Create download item from dictionary"""
+        return DownloadItem(
+            name=data.get("name", ""),
+            url=data.get("url", ""),
+            progress=data.get("progress", 0),
+            status=data.get("status", "Pending"),
+            size=data.get("size", "0 MB"),
+            priority=data.get("priority", 1),
+            parent=parent
+        )
 
 
 class DownloadListModel(QAbstractListModel):
@@ -189,21 +216,65 @@ class DownloadBackend(QObject):
         super().__init__(parent)
         self._model = DownloadListModel(self)
         self._status_message = "Ready"
-        self._init_sample_data()
+        self._save_file = self._get_save_file_path()
+        self._workers = {}  # Dictionary to track active download workers
+        self._next_id = 1  # Counter for unique download IDs
+        # Load saved downloads on startup
+        self._load_downloads()
     
-    def _init_sample_data(self):
-        """Initialize with sample download data"""
-        sample_downloads = [
-            DownloadItem("model-bert-base.bin", "https://huggingface.co/bert-base", 75, "Downloading", "420 MB"),
-            DownloadItem("dataset-common-voice.tar.gz", "https://huggingface.co/datasets/mozilla", 30, "Downloading", "2.1 GB"),
-            DownloadItem("tokenizer-gpt2.json", "https://huggingface.co/gpt2", 100, "Completed", "1.2 MB"),
-            DownloadItem("config-xlnet.yaml", "https://huggingface.co/xlnet", 50, "Paused", "3.5 KB"),
-            DownloadItem("weights-roberta-large.pt", "https://huggingface.co/roberta", 0, "Pending", "1.5 GB"),
-            DownloadItem("vocab-t5-small.txt", "https://huggingface.co/t5-small", 100, "Completed", "890 KB"),
-        ]
-        for item in sample_downloads:
-            self._model.addItem(item)
-        self.downloadsChanged.emit()
+    def _get_save_file_path(self):
+        """Get platform-appropriate save file location"""
+        data_dir = QStandardPaths.writableLocation(QStandardPaths.AppDataLocation)
+        Path(data_dir).mkdir(parents=True, exist_ok=True)
+        return Path(data_dir) / "downloads.json"
+    
+    def _detect_platform(self, url: str) -> str:
+        """
+        Detect platform from URL.
+        
+        Args:
+            url: URL to analyze
+        
+        Returns:
+            'huggingface' or 'unknown'
+        """
+        url_lower = url.lower()
+        
+        if 'huggingface.co' in url_lower:
+            return 'huggingface'
+        else:
+            return 'unknown'
+    
+    def _save_downloads(self):
+        """Save downloads to JSON file"""
+        try:
+            downloads_data = []
+            for i in range(self._model.rowCount()):
+                item = self._model.getItem(i)
+                if item:
+                    downloads_data.append(item.to_dict())
+            
+            with open(self._save_file, 'w', encoding='utf-8') as f:
+                json.dump(downloads_data, f, indent=2)
+        except Exception as e:
+            print(f"Error saving downloads: {e}")
+    
+    def _load_downloads(self):
+        """Load downloads from JSON file"""
+        try:
+            if self._save_file.exists():
+                with open(self._save_file, 'r', encoding='utf-8') as f:
+                    downloads_data = json.load(f)
+                
+                for data in downloads_data:
+                    item = DownloadItem.from_dict(data, parent=self._model)
+                    self._model.addItem(item)
+                
+                if downloads_data:
+                    self.downloadsChanged.emit()
+                    self._status_message = f"Loaded {len(downloads_data)} downloads"
+        except Exception as e:
+            print(f"Error loading downloads: {e}")
     
     @Property(QObject, notify=downloadsChanged)
     def downloadsModel(self):
@@ -222,11 +293,22 @@ class DownloadBackend(QObject):
     @Slot(str, str)
     def addDownload(self, name, url):
         """Add a new download to the queue"""
+        # Detect platform
+        platform = self._detect_platform(url)
+        
+        if platform == 'unknown':
+            self._status_message = f"Error: Unsupported URL format: {url}"
+            self.statusMessageChanged.emit(self._status_message)
+            return
+        
+        # Create download item
         new_item = DownloadItem(name, url, 0, "Pending", "Unknown")
         self._model.addItem(new_item)
         self.downloadsChanged.emit()
         self.downloadAdded.emit(name, url)
-        self.statusMessage = f"Added: {name}"
+        self._status_message = f"Added: {name} ({platform})"
+        self.statusMessageChanged.emit(self._status_message)
+        self._save_downloads()
     
     @Slot(int)
     def removeDownload(self, index):
@@ -234,26 +316,139 @@ class DownloadBackend(QObject):
         item = self._model.getItem(index)
         if item:
             removed_name = item.name
+            
+            # Cancel and clean up worker if exists
+            if index in self._workers:
+                self._workers[index].cancel()
+                self._workers[index].wait()  # Wait for thread to finish
+                self._workers[index].deleteLater()
+                del self._workers[index]
+            
             self._model.removeItem(index)
             self.downloadsChanged.emit()
             self.downloadRemoved.emit(index)
-            self.statusMessage = f"Removed: {removed_name}"
+            self._status_message = f"Removed: {removed_name}"
+            self.statusMessageChanged.emit(self._status_message)
+            self._save_downloads()
     
     @Slot(int)
     def startDownload(self, index):
         """Start or resume a download"""
         item = self._model.getItem(index)
-        if item and item.status in ["Pending", "Paused"]:
-            item.status = "Downloading"
-            self.statusMessage = f"Started: {item.name}"
+        if not item:
+            return
+        
+        # Check if worker already exists for this download
+        if index in self._workers:
+            worker = self._workers[index]
+            if worker.is_paused():
+                worker.resume()
+                return
+        
+        # Only start new downloads or paused ones
+        if item.status not in ["Pending", "Paused"]:
+            return
+        
+        # Detect platform
+        platform = self._detect_platform(item.url)
+        if platform == 'unknown':
+            item.status = "Error"
+            self._status_message = f"Error: Unsupported URL for {item.name}"
+            self.statusMessageChanged.emit(self._status_message)
+            return
+        
+        # Get default download directory
+        download_dir = QStandardPaths.writableLocation(QStandardPaths.DownloadLocation)
+        local_dir = Path(download_dir) / item.name
+        
+        # Create worker
+        worker = DownloadWorker(
+            download_id=self._next_id,
+            platform=platform,
+            url=item.url,
+            local_dir=str(local_dir),
+            name=item.name
+        )
+        self._next_id += 1
+        
+        # Connect signals
+        worker.progress_updated.connect(lambda p: self._on_progress_updated(index, p))
+        worker.status_changed.connect(lambda s: self._on_status_changed(index, s))
+        worker.download_completed.connect(lambda: self._on_download_completed(index))
+        worker.download_failed.connect(lambda e: self._on_download_failed(index, e))
+        worker.message_sent.connect(lambda m: self._on_message_sent(m))
+        
+        # Store worker and start
+        self._workers[index] = worker
+        worker.start()
+        
+        item.status = "Preparing"
+        self._status_message = f"Starting: {item.name}"
+        self.statusMessageChanged.emit(self._status_message)
+        self._save_downloads()
     
     @Slot(int)
     def pauseDownload(self, index):
         """Pause a download"""
         item = self._model.getItem(index)
-        if item and item.status == "Downloading":
-            item.status = "Paused"
-            self.statusMessage = f"Paused: {item.name}"
+        if not item or item.status != "Downloading":
+            return
+        
+        # Pause worker if exists
+        if index in self._workers:
+            self._workers[index].pause()
+        
+        item.status = "Paused"
+        self._status_message = f"Paused: {item.name}"
+        self.statusMessageChanged.emit(self._status_message)
+        self._save_downloads()
+    
+    def _on_progress_updated(self, index: int, percentage: int):
+        """Handle progress update from worker"""
+        item = self._model.getItem(index)
+        if item:
+            item.progress = percentage
+    
+    def _on_status_changed(self, index: int, status: str):
+        """Handle status change from worker"""
+        item = self._model.getItem(index)
+        if item:
+            item.status = status
+            self._save_downloads()
+    
+    def _on_download_completed(self, index: int):
+        """Handle download completion"""
+        item = self._model.getItem(index)
+        if item:
+            item.status = "Completed"
+            item.progress = 100
+            self._status_message = f"Completed: {item.name}"
+            self.statusMessageChanged.emit(self._status_message)
+            self._save_downloads()
+        
+        # Clean up worker
+        if index in self._workers:
+            self._workers[index].deleteLater()
+            del self._workers[index]
+    
+    def _on_download_failed(self, index: int, error: str):
+        """Handle download failure"""
+        item = self._model.getItem(index)
+        if item:
+            item.status = "Error"
+            self._status_message = f"Error: {item.name} - {error}"
+            self.statusMessageChanged.emit(self._status_message)
+            self._save_downloads()
+        
+        # Clean up worker
+        if index in self._workers:
+            self._workers[index].deleteLater()
+            del self._workers[index]
+    
+    def _on_message_sent(self, message: str):
+        """Handle message from worker"""
+        self._status_message = message
+        self.statusMessageChanged.emit(message)
     
     @Slot()
     def startAll(self):
@@ -262,9 +457,12 @@ class DownloadBackend(QObject):
         for i in range(self._model.rowCount()):
             item = self._model.getItem(i)
             if item and item.status in ["Pending", "Paused"]:
-                item.status = "Downloading"
+                self.startDownload(i)
                 count += 1
-        self.statusMessage = f"Started {count} downloads"
+        
+        if count > 0:
+            self._status_message = f"Starting {count} downloads"
+            self.statusMessageChanged.emit(self._status_message)
     
     @Slot()
     def pauseAll(self):
@@ -273,9 +471,12 @@ class DownloadBackend(QObject):
         for i in range(self._model.rowCount()):
             item = self._model.getItem(i)
             if item and item.status == "Downloading":
-                item.status = "Paused"
+                self.pauseDownload(i)
                 count += 1
-        self.statusMessage = f"Paused {count} downloads"
+        
+        if count > 0:
+            self._status_message = f"Paused {count} downloads"
+            self.statusMessageChanged.emit(self._status_message)
     
     @Slot()
     def clearCompleted(self):
@@ -289,8 +490,13 @@ class DownloadBackend(QObject):
                 removed += 1
             else:
                 i += 1
+        
         self.downloadsChanged.emit()
-        self.statusMessage = f"Cleared {removed} completed downloads"
+        
+        if removed > 0:
+            self._status_message = f"Cleared {removed} completed downloads"
+            self.statusMessageChanged.emit(self._status_message)
+            self._save_downloads()
 
 
 def main():
@@ -311,8 +517,14 @@ def main():
     context = engine.rootContext()
     context.setContextProperty("downloadBackend", backend)
     
-    # Load main QML file
-    qml_file = Path(__file__).parent / "qml" / "main.qml"
+    # Load main QML file - handle both development and bundled paths
+    if getattr(sys, 'frozen', False):
+        # Running as compiled executable
+        qml_file = Path(sys._MEIPASS) / "qml" / "main.qml"
+    else:
+        # Running as script
+        qml_file = Path(__file__).parent / "qml" / "main.qml"
+    
     engine.load(QUrl.fromLocalFile(str(qml_file)))
     
     # Check if QML loaded successfully

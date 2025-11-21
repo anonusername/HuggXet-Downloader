@@ -1,4 +1,9 @@
-"""Unit tests for DownloadItem class"""
+"""
+Unit tests for DownloadItem class.
+
+Tests focus on property management and serialization.
+Real download functionality is tested in test_integration_downloads.py.
+"""
 import pytest
 from PySide6.QtCore import QCoreApplication
 from main import DownloadItem
@@ -14,7 +19,7 @@ def test_download_item_initialization(app):
     """Test DownloadItem is initialized with correct values"""
     item = DownloadItem(
         name="test_file.bin",
-        url="https://example.com/test",
+        url="https://huggingface.co/test/test",
         progress=50,
         status="Downloading",
         size="100 MB",
@@ -22,7 +27,7 @@ def test_download_item_initialization(app):
     )
     
     assert item.name == "test_file.bin"
-    assert item.url == "https://example.com/test"
+    assert item.url == "https://huggingface.co/test/test"
     assert item.progress == 50
     assert item.status == "Downloading"
     assert item.size == "100 MB"
