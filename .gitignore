@@ -59,3 +59,6 @@ inc/
 /*.zip
 /local/
 /.carmel/ 
+
+# Agent Instructions
+.instructions/
