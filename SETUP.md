@@ -209,9 +209,24 @@ VS Code tasks are configured in `.vscode/tasks.json` for common operations:
 ### Adding a Download
 
 1. Click the **➕ Add** button in the toolbar
-2. Enter the file name
-3. Enter the URL
-4. Click **OK**
+2. Fill in the dialog fields:
+
+   **Download Name Field:**
+   - Enter a descriptive name for your download (e.g., "Wan2.2-TI2V Model")
+   - Minimum 3 characters required
+   - Field border turns red if name is too short
+   - This name appears in your download queue for easy identification
+
+   **HuggingFace URL Field:**
+   - Paste the complete URL from HuggingFace Hub
+   - Accepted formats:
+     - Repository: `https://huggingface.co/openai/gpt-oss-20b`
+     - Directory: `https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B/tree/main/examples`
+     - File: `https://huggingface.co/bert-base/blob/main/config.json`
+   - Field border turns red if URL is invalid (must contain "huggingface.co" or "hf.co")
+   - Example URLs are shown at the bottom of the dialog
+
+3. Click **OK** to add to queue, or **Cancel** to discard
 
 ### Switching Views
 

@@ -297,20 +297,128 @@ ApplicationWindow {
             Label {
                 text: "Enter download details:"
                 font.pixelSize: 14
+                color: Material.color(Material.Grey, Material.Shade300)
             }
             
-            TextField {
-                id: nameField
+            // Name field with label and description
+            ColumnLayout {
                 Layout.fillWidth: true
-                placeholderText: "File name (e.g., model-bert.bin)"
-                selectByMouse: true
+                spacing: 4
+                
+                Label {
+                    text: "Download Name"
+                    font.pixelSize: 13
+                    font.bold: true
+                    color: Material.accent
+                }
+                
+                TextField {
+                    id: nameField
+                    Layout.fillWidth: true
+                    placeholderText: "e.g., Wan2.2-TI2V Model"
+                    selectByMouse: true
+                    
+                    // Input validation hint
+                    property bool hasError: false
+                    
+                    Material.accent: hasError ? Material.Red : Material.Purple
+                    
+                    onTextChanged: {
+                        hasError = text.trim().length > 0 && text.trim().length < 3
+                    }
+                }
+                
+                Label {
+                    text: "A friendly name to identify this download in your queue"
+                    font.pixelSize: 11
+                    color: Material.color(Material.Grey, Material.Shade500)
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
             }
             
-            TextField {
-                id: urlField
+            // URL field with label and description
+            ColumnLayout {
                 Layout.fillWidth: true
-                placeholderText: "URL (e.g., https://huggingface.co/...)"
-                selectByMouse: true
+                spacing: 4
+                
+                Label {
+                    text: "HuggingFace URL"
+                    font.pixelSize: 13
+                    font.bold: true
+                    color: Material.accent
+                }
+                
+                TextField {
+                    id: urlField
+                    Layout.fillWidth: true
+                    placeholderText: "https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B"
+                    selectByMouse: true
+                    
+                    // Input validation hint
+                    property bool hasError: false
+                    property bool isValidUrl: text.includes("huggingface.co") || text.includes("hf.co")
+                    
+                    Material.accent: hasError ? Material.Red : Material.Purple
+                    
+                    onTextChanged: {
+                        hasError = text.trim().length > 0 && !isValidUrl
+                    }
+                }
+                
+                Label {
+                    text: "Paste the complete HuggingFace repository or file URL\nSupports: /tree/, /blob/, or direct repo URLs"
+                    font.pixelSize: 11
+                    color: Material.color(Material.Grey, Material.Shade500)
+                    wrapMode: Text.WordWrap
+                    Layout.fillWidth: true
+                }
+            }
+            
+            // Example section
+            Rectangle {
+                Layout.fillWidth: true
+                height: exampleLayout.height + 16
+                color: Material.color(Material.Grey, Material.Shade900)
+                radius: 4
+                
+                ColumnLayout {
+                    id: exampleLayout
+                    anchors.fill: parent
+                    anchors.margins: 8
+                    spacing: 4
+                    
+                    Label {
+                        text: "💡 Example URLs:"
+                        font.pixelSize: 11
+                        font.bold: true
+                        color: Material.color(Material.Grey, Material.Shade300)
+                    }
+                    
+                    Label {
+                        text: "• https://huggingface.co/openai/gpt-oss-20b"
+                        font.pixelSize: 10
+                        font.family: "Consolas, Courier New, monospace"
+                        color: Material.color(Material.Grey, Material.Shade400)
+                        Layout.fillWidth: true
+                    }
+                    
+                    Label {
+                        text: "• https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B/tree/main/examples"
+                        font.pixelSize: 10
+                        font.family: "Consolas, Courier New, monospace"
+                        color: Material.color(Material.Grey, Material.Shade400)
+                        Layout.fillWidth: true
+                    }
+                    
+                    Label {
+                        text: "• https://huggingface.co/bert-base/blob/main/config.json"
+                        font.pixelSize: 10
+                        font.family: "Consolas, Courier New, monospace"
+                        color: Material.color(Material.Grey, Material.Shade400)
+                        Layout.fillWidth: true
+                    }
+                }
             }
         }
         
@@ -319,12 +427,16 @@ ApplicationWindow {
                 downloadBackend.addDownload(nameField.text, urlField.text)
                 nameField.text = ""
                 urlField.text = ""
+                nameField.hasError = false
+                urlField.hasError = false
             }
         }
         
         onRejected: {
             nameField.text = ""
             urlField.text = ""
+            nameField.hasError = false
+            urlField.hasError = false
         }
         
         // Entrance animation

@@ -1,0 +1,159 @@
+[tool.briefcase]
+project_name = "HuggXet-Downloader"
+bundle = "io.huggxet"
+version = "1.0.0"
+url = "https://github.com/anonusername/HuggXet-Downloader"
+license = "MIT"
+author = "anonusername"
+author_email = "contact@huggxet.io"
+
+[tool.briefcase.app.huggxetdownloader]
+formal_name = "HuggXet Downloader"
+description = "A modern cross-platform download manager for HuggingFace repositories"
+long_description = """A modern, cross-platform download manager for HuggingFace repositories. 
+Built with PySide6 and QML, featuring a Material Design UI optimized for both desktop and touch interfaces."""
+icon = "resources/icon"  # Icon location (will need to create resources/icon.png)
+sources = [
+    "main.py",
+    "download_worker.py",
+    "downloaders",
+    "qml",
+]
+test_sources = ["tests"]
+
+requires = [
+    "PySide6>=6.6.0",
+    "huggingface_hub>=1.1.0",
+]
+
+test_requires = [
+    "pytest>=7.4.0",
+    "pytest-qt>=4.2.0",
+    "pytest-cov>=4.1.0",
+]
+
+[tool.briefcase.app.huggxetdownloader.macOS]
+requires = [
+    "PySide6>=6.6.0",
+    "huggingface_hub>=1.1.0",
+]
+universal_build = true
+info = {
+    CFBundleIdentifier = "io.huggxet.downloader",
+    CFBundleName = "HuggXet Downloader",
+    CFBundleShortVersionString = "1.0.0",
+    CFBundleVersion = "1",
+    NSHumanReadableCopyright = "Copyright © 2025 anonusername",
+}
+
+[tool.briefcase.app.huggxetdownloader.linux]
+requires = [
+    "PySide6>=6.6.0",
+    "huggingface_hub>=1.1.0",
+]
+system_requires = [
+    "libqt6core6",
+    "libqt6gui6",
+    "libqt6qml6",
+    "libqt6quick6",
+    "qml6-module-qtquick-controls",
+]
+
+[tool.briefcase.app.huggxetdownloader.linux.appimage]
+manylinux = "manylinux_2_28"
+system_runtime_requires = [
+    "libqt6core6",
+    "libqt6gui6",
+    "libqt6qml6",
+    "libqt6quick6",
+]
+
+[tool.briefcase.app.huggxetdownloader.windows]
+requires = [
+    "PySide6>=6.6.0",
+    "huggingface_hub>=1.1.0",
+]
+
+[tool.briefcase.app.huggxetdownloader.iOS]
+requires = [
+    "PySide6>=6.6.0",
+    "huggingface_hub>=1.1.0",
+]
+supported_devices = ["iphone", "ipad"]
+info = {
+    UIRequiresFullScreen = false,
+    UISupportedInterfaceOrientations = [
+        "UIInterfaceOrientationPortrait",
+        "UIInterfaceOrientationPortraitUpsideDown",
+        "UIInterfaceOrientationLandscapeLeft",
+        "UIInterfaceOrientationLandscapeRight",
+    ],
+}
+
+[tool.briefcase.app.huggxetdownloader.android]
+requires = [
+    "PySide6>=6.6.0",
+    "huggingface_hub>=1.1.0",
+]
+base_theme = "Theme.MaterialComponents.DayNight.DarkActionBar"
+build_gradle_dependencies = [
+    "androidx.appcompat:appcompat:1.6.1",
+    "com.google.android.material:material:1.9.0",
+]
+
+# Android permissions
+permission = {
+    "android.permission.INTERNET" = "Access network for downloads",
+    "android.permission.WRITE_EXTERNAL_STORAGE" = "Save downloaded files",
+    "android.permission.READ_EXTERNAL_STORAGE" = "Read download location",
+}
+
+# Android features
+feature = {
+    "android.hardware.touchscreen" = false,  # Not required, but useful
+}
+
+[build-system]
+requires = ["briefcase>=0.3.16"]
+build-backend = "briefcase.integrations.setuptools"
+
+[project]
+name = "huggxet-downloader"
+version = "1.0.0"
+description = "A modern cross-platform download manager for HuggingFace repositories"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+authors = [
+    {name = "anonusername", email = "contact@huggxet.io"}
+]
+keywords = ["download", "huggingface", "pyside6", "qml", "cross-platform"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.8",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Topic :: Software Development :: Libraries :: Application Frameworks",
+]
+dependencies = [
+    "PySide6>=6.6.0",
+    "huggingface_hub>=1.1.0",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.4.0",
+    "pytest-qt>=4.2.0",
+    "pytest-cov>=4.1.0",
+    "pyinstaller>=6.0.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/anonusername/HuggXet-Downloader"
+Repository = "https://github.com/anonusername/HuggXet-Downloader"
+Issues = "https://github.com/anonusername/HuggXet-Downloader/issues"

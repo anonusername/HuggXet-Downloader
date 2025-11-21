@@ -22,6 +22,13 @@ wheels/
 *.egg
 MANIFEST
 
+# Mobile Build Artifacts
+.buildozer/
+bin/
+*.apk
+*.aab
+*.ipa
+
 # Testing
 .pytest_cache/
 .coverage
@@ -49,34 +56,3 @@ credentials.json
 # OS
 .DS_Store
 Thumbs.db
-
-# Perl (legacy)
-!Build/
-.last_cover_stats
-/META.yml
-/META.json
-/MYMETA.*
-*.o
-*.pm.tdy
-*.bs
-cover_db/
-nytprof.out
-/.build/
-_build/
-Build
-Build.bat
-inc/
-/blib/
-/_eumm/
-/*.gz
-/Makefile
-/Makefile.old
-/MANIFEST.bak
-/pm_to_blib
-/*.zip
-/local/
-/.carmel/ 
-
-# Agent Instructions
-.instructions/
-.instructions\AGENT_INSTRUCTIONS.md

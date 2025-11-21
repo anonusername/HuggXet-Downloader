@@ -81,10 +81,17 @@ Get your token from: https://huggingface.co/settings/tokens
 ## Usage
 
 1. **Add Download**
-   - Click the "+" button in the top right
-   - Enter a name for your download
-   - Paste the HuggingFace URL
-   - Click "Add"
+   - Click the "➕ Add" button in the top right toolbar
+   - **Download Name**: Enter a friendly name to identify this download (e.g., "Wan2.2-TI2V Model")
+     - Must be at least 3 characters
+     - Used to organize your download queue
+   - **HuggingFace URL**: Paste the complete HuggingFace URL
+     - Supports repository URLs: `https://huggingface.co/openai/gpt-oss-20b`
+     - Supports directory URLs: `https://huggingface.co/Wan-AI/Wan2.2-TI2V-5B/tree/main/examples`
+     - Supports file URLs: `https://huggingface.co/bert-base/blob/main/config.json`
+     - URL validation provides visual feedback (red border for invalid URLs)
+   - Review the example URLs shown in the dialog for guidance
+   - Click "OK" to add to queue
 
 2. **Start Download**
    - Click the play button (▶) on any download item
