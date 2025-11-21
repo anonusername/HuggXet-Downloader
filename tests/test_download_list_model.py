@@ -49,7 +49,8 @@ def test_model_data_retrieval(model):
         url="https://test.com",
         progress=50,
         status="Downloading",
-        size="100 MB"
+        size="100 MB",
+        priority=2
     )
     model.addItem(item)
     
@@ -60,6 +61,7 @@ def test_model_data_retrieval(model):
     assert model.data(index, DownloadListModel.ProgressRole) == 50
     assert model.data(index, DownloadListModel.StatusRole) == "Downloading"
     assert model.data(index, DownloadListModel.SizeRole) == "100 MB"
+    assert model.data(index, DownloadListModel.PriorityRole) == 2
 
 
 def test_model_role_names(model):
@@ -71,6 +73,7 @@ def test_model_role_names(model):
     assert roles[DownloadListModel.ProgressRole] == b'progress'
     assert roles[DownloadListModel.StatusRole] == b'status'
     assert roles[DownloadListModel.SizeRole] == b'size'
+    assert roles[DownloadListModel.PriorityRole] == b'priority'
 
 
 def test_model_remove_item(model):

@@ -11,6 +11,7 @@ Item {
     required property int downloadProgress
     required property string downloadStatus
     required property string downloadSize
+    required property int downloadPriority
     required property int itemIndex
     
     // Add entrance animation with stagger
@@ -78,6 +79,19 @@ Item {
         anchors.fill: parent
         anchors.margins: 16
         spacing: 12
+        
+        // Priority indicator at top
+        Rectangle {
+            width: 12
+            height: 12
+            radius: 6
+            color: {
+                if (downloadPriority >= 3) return Material.color(Material.Red)
+                else if (downloadPriority === 2) return Material.color(Material.Orange)
+                else return Material.color(Material.Grey)
+            }
+            Layout.alignment: Qt.AlignHCenter
+        }
         
         // Header with icon and status indicator
         RowLayout {

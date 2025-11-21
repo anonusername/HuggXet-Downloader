@@ -11,6 +11,7 @@ Item {
     required property int downloadProgress
     required property string downloadStatus
     required property string downloadSize
+    required property int downloadPriority
     required property int itemIndex
     
     // Add entrance animation
@@ -79,6 +80,19 @@ Item {
         RowLayout {
             Layout.fillWidth: true
             spacing: 12
+            
+            // Priority indicator
+            Rectangle {
+                width: 8
+                height: 8
+                radius: 4
+                color: {
+                    if (downloadPriority >= 3) return Material.color(Material.Red)
+                    else if (downloadPriority === 2) return Material.color(Material.Orange)
+                    else return Material.color(Material.Grey)
+                }
+                Layout.alignment: Qt.AlignVCenter
+            }
             
             Label {
                 text: downloadName

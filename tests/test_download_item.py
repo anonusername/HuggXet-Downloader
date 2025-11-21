@@ -17,7 +17,8 @@ def test_download_item_initialization(app):
         url="https://example.com/test",
         progress=50,
         status="Downloading",
-        size="100 MB"
+        size="100 MB",
+        priority=2
     )
     
     assert item.name == "test_file.bin"
@@ -25,6 +26,7 @@ def test_download_item_initialization(app):
     assert item.progress == 50
     assert item.status == "Downloading"
     assert item.size == "100 MB"
+    assert item.priority == 2
 
 
 def test_download_item_default_values(app):
@@ -36,6 +38,7 @@ def test_download_item_default_values(app):
     assert item.progress == 0
     assert item.status == "Pending"
     assert item.size == "0 MB"
+    assert item.priority == 1
 
 
 def test_download_item_name_setter(app):
@@ -115,6 +118,22 @@ def test_download_item_size_setter(app):
     item.size = "500 MB"
     
     assert item.size == "500 MB"
+    assert signal_emitted
+
+
+def test_download_item_priority_setter(app):
+    """Test DownloadItem priority property setter"""
+    item = DownloadItem()
+    signal_emitted = False
+    
+    def on_priority_changed():
+        nonlocal signal_emitted
+        signal_emitted = True
+    
+    item.priorityChanged.connect(on_priority_changed)
+    item.priority = 3
+    
+    assert item.priority == 3
     assert signal_emitted
 
 

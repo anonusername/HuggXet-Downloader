@@ -19,14 +19,16 @@ class DownloadItem(QObject):
     progressChanged = Signal()
     statusChanged = Signal()
     sizeChanged = Signal()
+    priorityChanged = Signal()
     
-    def __init__(self, name="", url="", progress=0, status="Pending", size="0 MB", parent=None):
+    def __init__(self, name="", url="", progress=0, status="Pending", size="0 MB", priority=1, parent=None):
         super().__init__(parent)
         self._name = name
         self._url = url
         self._progress = progress
         self._status = status
         self._size = size
+        self._priority = priority
     
     @Property(str, notify=nameChanged)
     def name(self):
@@ -77,6 +79,16 @@ class DownloadItem(QObject):
         if self._size != value:
             self._size = value
             self.sizeChanged.emit()
+    
+    @Property(int, notify=priorityChanged)
+    def priority(self):
+        return self._priority
+    
+    @priority.setter
+    def priority(self, value):
+        if self._priority != value:
+            self._priority = value
+            self.priorityChanged.emit()
 
 
 class DownloadListModel(QAbstractListModel):
@@ -87,6 +99,7 @@ class DownloadListModel(QAbstractListModel):
     ProgressRole = Qt.UserRole + 3
     StatusRole = Qt.UserRole + 4
     SizeRole = Qt.UserRole + 5
+    PriorityRole = Qt.UserRole + 6
     
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -111,6 +124,8 @@ class DownloadListModel(QAbstractListModel):
             return item.status
         elif role == self.SizeRole:
             return item.size
+        elif role == self.PriorityRole:
+            return item.priority
         
         return None
     
@@ -120,7 +135,8 @@ class DownloadListModel(QAbstractListModel):
             self.UrlRole: b'url',
             self.ProgressRole: b'progress',
             self.StatusRole: b'status',
-            self.SizeRole: b'size'
+            self.SizeRole: b'size',
+            self.PriorityRole: b'priority'
         }
     
     def addItem(self, item):
@@ -133,6 +149,7 @@ class DownloadListModel(QAbstractListModel):
         item.progressChanged.connect(lambda: self._itemChanged(item))
         item.statusChanged.connect(lambda: self._itemChanged(item))
         item.sizeChanged.connect(lambda: self._itemChanged(item))
+        item.priorityChanged.connect(lambda: self._itemChanged(item))
         self.endInsertRows()
     
     def removeItem(self, index):
