@@ -1,0 +1,3 @@
+[submodule ".instructions"]
+	path = .instructions
+	url = git@github.com:anonusername/HuggXet-Downloader-Internal.git
